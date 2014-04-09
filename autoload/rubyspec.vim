@@ -34,16 +34,23 @@ endfunction
 " Finds the related file of the current buffer.
 "
 function! rubyspec#Related()
-  let l:path = expand("%:p")
-  let l:source_path = s:FirstDirMatchingPatterns(l:path, g:source_pattern)
-  let l:spec_path = s:FirstDirMatchingPatterns(l:path, g:spec_patterns)
 
-  if s:IsSpec(l:path, g:spec_suffix)
-    let l:partial_path = s:ReplaceFilePath(l:path, l:spec_path, l:source_path)
-    return s:StripSuffix(l:partial_path, g:spec_suffix)
+  let l:filename = expand("%:t")
+  let l:dir = expand("%:h")
+  let l:root = s:GetGitDir(l:dir)
+  let l:source_path = s:FirstDirMatchingPatterns(l:root, g:source_pattern)
+  let l:spec_path = s:FirstDirMatchingPatterns(l:root, g:spec_patterns)
+
+  if s:IsSpec(l:filename, g:spec_suffix)
+    let l:result_dir = s:ReplaceFilePath(l:dir, l:spec_path, l:source_path)
+    let l:result_name = s:StripSuffix(l:filename, g:spec_suffix)
+    let l:result = l:result_dir . "/" . l:result_name
+    return l:result
   else
-    let l:partial_path = s:ReplaceFilePath(l:path, l:source_path, l:spec_path)
-    return s:AppendSuffix(l:partial_path, g:spec_suffix)
+    let l:result_dir = s:ReplaceFilePath(l:dir, l:source_path, l:spec_path)
+    let l:result_name = s:AppendSuffix(l:filename, g:spec_suffix)
+    let l:result = l:result_dir . "/" . l:result_name
+    return l:result
   endif
 endfunction
 
@@ -52,15 +59,18 @@ endfunction
 "------------------------------------------------------------------------------
 
 " Example
-" s:IsSpec("dir/test.rb", "_spec") #=> false
-" s:IsSpec("dir/test_spec.rb", "_spec") #=> true
+" s:FirstDirMatchingPatterns("dir/lib/name/model.rb", "lib/*/")
+" #=> "dir/lib/name"
 "
 function! s:FirstDirMatchingPatterns(path, patterns)
-  for pattern in a:patterns
-    let l:candidate = glob(pattern)
-    if strlen(l:candidate) && isdirectory(l:candidate)
-      return substitute(l:candidate, "\/$", "", "")
-    endif
+  for l:pattern in a:patterns
+    let l:matches = split(globpath(a:path, l:pattern), '\n')
+    if len(l:matches)
+      let l:candidate = l:matches[0]
+      if isdirectory(l:candidate)
+        return substitute(l:candidate, "\/$", "", "")
+      endif
+    end
   endfor
 endfunction
 
@@ -101,4 +111,19 @@ function! s:StripSuffix(path, suffix)
   let l:pattern = a:suffix . "." . l:extension . "$"
   let l:replacement = "." . l:extension
   return substitute(a:path, l:pattern, l:replacement, "")
+endfunction
+
+" Returns the git root of the given path
+"
+" Example
+" s:GetGitDir("dir/lib/file.text")
+"  => "dir"
+"
+function! s:GetGitDir(dir)
+  let l:gitdir = system("cd " . a:dir . "; git rev-parse --show-toplevel")
+  if matchstr(l:gitdir, '^fatal:.*')
+    return dir
+  else
+    return substitute(gitdir, "\n", "", "")
+  endif
 endfunction
