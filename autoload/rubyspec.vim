@@ -9,7 +9,7 @@ let g:ruby_spec_auto_loaded = 1
 
 runtime! plugin/rubyspec/*.vim
 
-let g:source_pattern = ["lib/*/"]
+let g:source_pattern = ["lib/*/", "app"]
 let g:spec_patterns = ["spec/unit", "spec"]
 let g:spec_suffix = "_spec"
 
