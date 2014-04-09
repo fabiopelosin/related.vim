@@ -3,7 +3,7 @@
 "------------------------------------------------------------------------------
 
 if exists("g:ruby_spec_auto_loaded")
-  finish
+  " finish
 endif
 let g:ruby_spec_auto_loaded = 1
 
@@ -36,7 +36,7 @@ endfunction
 function! rubyspec#Related()
 
   let l:filename = expand("%:t")
-  let l:dir = expand("%:h")
+  let l:dir = expand("%:p:h")
   let l:root = s:GetGitDir(l:dir)
   let l:source_path = s:FirstDirMatchingPatterns(l:root, g:source_pattern)
   let l:spec_path = s:FirstDirMatchingPatterns(l:root, g:spec_patterns)
